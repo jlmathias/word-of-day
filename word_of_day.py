@@ -117,10 +117,8 @@ def format_sms_message(word_data):
 
 def send_sms(message, phone_number, gmail_address, gmail_password):
     """Send SMS via AT&T email-to-SMS gateway."""
-    # AT&T SMS gateway - use 11-digit format with leading 1
-    if len(phone_number) == 10:
-        phone_number = "1" + phone_number
-    sms_gateway = f"{phone_number}@txt.att.net"
+    # AT&T SMS gateway - use +1 country code format
+    sms_gateway = f"+1{phone_number}@txt.att.net"
     
     # Create message
     msg = MIMEText(message)
