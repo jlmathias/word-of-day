@@ -116,9 +116,9 @@ def format_sms_message(word_data):
 
 
 def send_sms(message, phone_number, gmail_address, gmail_password):
-    """Send SMS via AT&T email-to-SMS gateway."""
-    # AT&T SMS gateway - use +1 country code format
-    sms_gateway = f"+1{phone_number}@txt.att.net"
+    """Send SMS via AT&T MMS gateway (more reliable than SMS gateway)."""
+    # AT&T MMS gateway - often works when txt.att.net doesn't
+    sms_gateway = f"{phone_number}@mms.att.net"
     
     # Create message
     msg = MIMEText(message)
