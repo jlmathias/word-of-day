@@ -1,0 +1,33 @@
+name: Daily Word of the Day SMS
+
+on:
+  # Run daily at 8:00 AM Pacific Time (UTC-8)
+  # Note: GitHub Actions uses UTC, so 8 AM PT = 16:00 UTC (or 15:00 during DST)
+  schedule:
+    - cron: '0 16 * * *'
+  
+  # Allow manual trigger for testing
+  workflow_dispatch:
+
+jobs:
+  send-word-of-day:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Send Word of the Day SMS
+        env:
+          PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python word_of_day.py
