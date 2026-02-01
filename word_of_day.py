@@ -117,7 +117,9 @@ def format_sms_message(word_data):
 
 def send_sms(message, phone_number, gmail_address, gmail_password):
     """Send SMS via AT&T email-to-SMS gateway."""
-    # AT&T SMS gateway
+    # AT&T SMS gateway - use 11-digit format with leading 1
+    if len(phone_number) == 10:
+        phone_number = "1" + phone_number
     sms_gateway = f"{phone_number}@txt.att.net"
     
     # Create message
@@ -151,8 +153,12 @@ def main():
     # Remove any non-digit characters from phone number
     phone_number = re.sub(r'\D', '', phone_number)
     
+    # Accept 10 or 11 digit numbers (with or without leading 1)
+    if len(phone_number) == 11 and phone_number.startswith('1'):
+        phone_number = phone_number[1:]  # Strip leading 1, we'll add it back in send_sms
+    
     if len(phone_number) != 10:
-        raise ValueError("Phone number must be 10 digits")
+        raise ValueError("Phone number must be 10 digits (or 11 with leading 1)")
     
     # Fetch word of the day
     print("Fetching word of the day...")
