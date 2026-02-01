@@ -28,35 +28,57 @@ def get_word_of_the_day():
     # The title contains the word
     word = entry.title.strip()
     
-    # Parse the description for definition and example
+    # Parse the description HTML
     description = entry.description
     
-    # Clean HTML tags and decode entities
-    clean_desc = re.sub(r'<[^>]+>', '', description)
-    clean_desc = unescape(clean_desc)
+    # Extract part of speech - appears after bullet as <em>adjective</em>
+    # Pattern: • \pronunciation\ • <em>part_of_speech</em>
+    pos_match = re.search(r'\\[^\\]+\\[^<]*<em>(\w+)</em>', description)
+    part_of_speech = pos_match.group(1).strip() if pos_match else ""
     
-    # Extract part of speech and definition
-    # Format is typically: "part of speech : definition"
-    lines = [line.strip() for line in clean_desc.split('\n') if line.strip()]
+    # Extract definition - the paragraph that explains what the word means
+    # It typically contains the word in <em> tags and describes it
+    # Look for <p><em>Word</em> describes/means/is...
+    def_match = re.search(
+        rf'<p>\s*<em>{re.escape(word)}</em>\s+([^<]+(?:<[^>]+>[^<]*)*?)</p>',
+        description,
+        re.IGNORECASE
+    )
+    if def_match:
+        definition = def_match.group(1)
+        definition = re.sub(r'<[^>]+>', '', definition)
+        definition = unescape(definition).strip()
+        # Capitalize first letter
+        if definition:
+            definition = definition[0].upper() + definition[1:]
+    else:
+        # Fallback: find paragraphs and pick the definition-like one
+        definition = ""
+        paragraphs = re.findall(r'<p>(.*?)</p>', description, re.DOTALL)
+        for p in paragraphs:
+            clean_p = re.sub(r'<[^>]+>', '', p)
+            clean_p = unescape(clean_p).strip()
+            # Look for descriptive text (not examples, not links)
+            if (clean_p and 
+                not clean_p.startswith('//') and 
+                'See the entry' not in clean_p and
+                'Examples:' not in clean_p and
+                word.lower() in clean_p.lower() and
+                len(clean_p) > 30):
+                definition = clean_p
+                break
     
-    definition = ""
-    example = ""
-    part_of_speech = ""
-    
-    for line in lines:
-        # Look for part of speech pattern (noun, verb, adjective, etc.)
-        if ':' in line and not definition:
-            parts = line.split(':', 1)
-            if len(parts) == 2:
-                part_of_speech = parts[0].strip()
-                definition = parts[1].strip()
-        # Look for example (often in quotes or follows "Example:")
-        elif '"' in line or line.lower().startswith('example'):
-            example = line
-    
-    # If we didn't parse well, use the whole description
-    if not definition:
-        definition = clean_desc[:200]
+    # Extract example sentence (starts with //)
+    example_match = re.search(r'//\s*([^<]+)', description)
+    if example_match:
+        example = example_match.group(1)
+        example = re.sub(r'<[^>]+>', '', example)
+        example = unescape(example).strip()
+        # Remove trailing period if present, then wrap in quotes
+        example = example.rstrip('.')
+        example = f'"{example}."'
+    else:
+        example = ""
     
     return {
         'word': word,
